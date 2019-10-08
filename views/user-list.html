@@ -1,0 +1,288 @@
+{{template "header"}}
+<title>用户管理</title>
+<script>
+    $(function () {
+        $(".reset-pwd").each(function () {
+            $(this).click(function () {
+                let id = $(this).attr("id").split("-")[0];
+                let name = $(`#${id}-name`).html();
+                let $dialog = $("#dialog-content");
+                $dialog.attr("data-id", id);
+                $dialog.attr("data-name", name);
+
+                $dialog.html(`你确定要重置用户[${name}]的密码吗?`);
+
+                $("#dialog").modal();
+            });
+        });
+        $(".role-modify").each(function () {
+            $(this).click(function () {
+                $(".role-check-box").each(function () {
+                    $(this).prop("checked", false);
+                });
+                let id = $(this).attr("id").split("-")[0];
+                let name = $(`#${id}-name`).html();
+                let username = $(`#${id}-username`).html();
+                $.ajax({
+                    type: "get",
+                    url: "/admin/user-role/" + id,
+                    dataType: "json",
+                    success: function (data) {
+                        if (data.code === 1) {
+                            for (let i = 0; i < data.data.length; i++) {
+                                $(`#${data.data[i]}-role-modify-role`).prop("checked", true);
+                            }
+                            $("#role-modify-name").val(name);
+                            $("#role-modify-account").val(username);
+                            $("#role-modify-id").val(id);
+                            $("#role-modify").modal();
+                        } else {
+                            alert(`获取用户角色列表失败:${data.message}`)
+                        }
+                    }
+                });
+            });
+        });
+
+        $("#role-modify-submit").click(function () {
+            let roles = "";
+            let id = $("#role-modify-id").val();
+            let name = $("#role-modify-name").val();
+            $(".role-check-box:checked").each(function () {
+                roles += $(this).attr("id").split("-")[0];
+                roles += "#"
+            });
+            if (roles === "") {
+                alert("请先分配一项用户角色");
+                return
+            }
+            $.ajax({
+                type: "post",
+                url: "/admin/user-role-modify",
+                data: `{"uid":${id},"roles":"${roles}"}`,
+                dataType:"json",
+                success:function (data) {
+                    if (data.code === 1) {
+                        alert(`用户[${name}]的角色修改成功!`);
+                        location.reload();
+                    } else {
+                        alert(`用户[${name}]的角色修改失败,原因:${data.message}`);
+                    }
+                }
+            });
+        });
+
+
+        $("#dialog-submit").click(function () {
+            let $dialog = $("#dialog-content");
+            let id = $dialog.attr("data-id");
+            let name = $dialog.attr("data-name");
+            $.ajax({
+                type: "post",
+                url: "/admin/user/reset-pwd/" + id,
+                dataType: "json",
+                success: function (data) {
+                    if (data.code === 1) {
+                        alert(`用户[${name}]的密码重置成功!`);
+                        location.reload();
+                    } else {
+                        alert(`用户[${name}]的密码重置失败,原因:${data.message}`);
+                    }
+                }
+            });
+        });
+        $("#show-create-user-dialog").click(function () {
+            $("#user-add").modal();
+        });
+
+        $("#user-add-submit").click(function () {
+            let roles = "";
+            let username;
+            let name;
+            $(".role-check-box:checked").each(function () {
+                roles += $(this).attr("id").split("-")[0];
+                roles += "#"
+            });
+            username = $("#user-add-account").val();
+            name = $("#user-add-name").val();
+            if (username === "") {
+                alert("账号不可为空");
+                return
+            }
+            if (name === "") {
+                alert("姓名不可为空");
+                return
+            }
+            if (roles === "") {
+                alert("请先分配用户角色");
+                return
+            }
+
+            $.ajax({
+                type: "post",
+                url: "/admin/user/add",
+                dataType: "json",
+                data: `{"username":"${username}","name":"${name}","roles":"${roles}"}`,
+                success: function (data) {
+                    if (data.code === 1) {
+                        alert("用户新增成功");
+                        location.reload();
+                    } else {
+                        alert(`用户新增失败:${data.message}`);
+                    }
+                }
+            });
+        });
+    });
+</script>
+{{template "middle"}}
+<div class="navbar navbar-inverse navbar-static-top">
+    <div class="container">
+    {{template "navbar" .}}
+    </div>
+</div>
+<div class="container">
+    <div class="row">
+        <div class="col-md-3">
+            <div class="list-group">
+            {{$path := .FullPath}}
+            {{range .AdminMenus}}
+                <a href="{{.Path}}" class="list-group-item {{if eq $path .Path}}active{{end}}">
+                {{.Name}}
+                </a>
+            {{end}}
+            </div>
+        </div>
+        <div class="col-md-9">
+            <div class="thumbnail">
+                <div class="caption">
+                    <div class="text-right">
+                        <button class="btn btn-success" id="show-create-user-dialog">+ 添加用户</button>
+                    </div>
+                    <div class="text-center" style="margin-top: 10pt">
+                        <table class="table table-hover text-center">
+                            <thead>
+                            <tr>
+                                <td class="text-warning">用户ID</td>
+                                <td class="text-warning">用户账号</td>
+                                <td class="text-warning">用户姓名</td>
+                                <td class="text-warning">创建时间</td>
+                                <td class="text-warning">上次登录时间</td>
+                                <td class="text-warning">操作</td>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            {{range .Users}}
+                            <tr style="cursor: pointer;">
+                                <td width="10%">
+                                {{.Id}}
+                                </td>
+                                <td width="10%" id="{{.Id}}-username">{{.Username}}</td>
+                                <td width="15%" id="{{.Id}}-name">{{.Name}}</td>
+                                <td width="20%">{{.CreateTime}}</td>
+                                <td width="20%">
+                                {{.LastLoginTime}}
+                                </td>
+                                <td width="25%">
+                                    <button class="btn btn-link reset-pwd" id="{{.Id}}-reset-pwd">重置密码</button>
+                                    |
+                                    <button class="btn btn-link role-modify" id="{{.Id}}-role-modify">修改角色</button>
+                                </td>
+                            </tr>
+                            {{end}}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!-- user-add -->
+<div id="user-add" class="modal fade" data-backdrop="static" data-keyboard="false" aria-hidden="true" tabindex="-1"
+     role="dialog"
+     aria-labelledby="myModalLabel" style="margin-top: 60pt;">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header text-center">
+                <h4 class="modal-title text-primary" id="user-add-title"><strong>添加新用户</strong></h4>
+            </div>
+            <div class="modal-body text-center">
+                <div class="form-group form-inline">
+                    <label for="user-add-account" style="margin-right: 20pt;">账号：</label>
+                    <input class="form-control" id="user-add-account" placeholder="Account"
+                           style="width: 200pt">
+                </div>
+                <div class="form-group  form-inline">
+                    <label for="user-add-name" style="margin-right: 20pt;">姓名：</label>
+                    <input class="form-control" id="user-add-name" placeholder="Name" style="width: 200pt">
+                </div>
+                <div class="form-group text-center">
+                    <label for="user-add-role">分配用户角色</label>
+                    <div class="thumbnail form-inline" style="margin-top: 15pt;">
+                    {{range .Roles}}
+                        <div class="form-group" style="margin-right: 20pt">
+                            <input id="{{.Id}}-user-add-role" type="checkbox" class="role-check-box">
+                            <label for="{{.Id}}-user-add-role">{{.Name}}</label>
+                        </div>
+                    {{end}}
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <div class="text-center">
+                    <button class="btn  btn-danger" data-dismiss="modal">返回</button>
+                    <button class="btn btn-success" id="user-add-submit" style="margin-left: 30pt;">确定
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- role-modify -->
+<div id="role-modify" class="modal fade" data-backdrop="static" data-keyboard="false" aria-hidden="true" tabindex="-1"
+     role="dialog"
+     aria-labelledby="myModalLabel" style="margin-top: 60pt;">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header text-center">
+                <h4 class="modal-title text-primary" id="role-modify-title"><strong>修改用户角色</strong></h4>
+            </div>
+            <div class="modal-body text-center">
+                <input id="role-modify-id" type="hidden">
+                <div class="form-group form-inline">
+                    <label for="role-modify-account" style="margin-right: 20pt;">用户账号：</label>
+                    <input class="form-control" id="role-modify-account"
+                           style="width: 200pt" readonly>
+                </div>
+                <div class="form-group  form-inline">
+                    <label for="role-modify-name" style="margin-right: 20pt;">用户姓名：</label>
+                    <input class="form-control" id="role-modify-name" style="width: 200pt" readonly>
+                </div>
+                <div class="form-group text-center">
+                    <label for="role-modify-role">分配用户角色</label>
+                    <div class="thumbnail form-inline" style="margin-top: 15pt;">
+                    {{range .Roles}}
+                        <div class="form-group" style="margin-right: 20pt">
+                            <input id="{{.Id}}-role-modify-role" type="checkbox" class="role-check-box">
+                            <label for="{{.Id}}-role-modify-role">{{.Name}}</label>
+                        </div>
+                    {{end}}
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <div class="text-center">
+                    <button class="btn btn-danger" data-dismiss="modal">返回</button>
+                    <button class="btn btn-success" id="role-modify-submit" style="margin-left: 30pt;">确定
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{{template "confirm-dialog"}}
+{{template "footer"}}

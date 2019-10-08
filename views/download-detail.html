@@ -1,0 +1,212 @@
+{{template "header"}}
+<title>下载</title>
+<script>
+    function rate(that) {
+        let id = $(that).attr("data-id");
+        $.ajax({
+            type: "post",
+            url: "/download/rate/" + id,
+            dataType: "json",
+            success: function (data) {
+                if (data.code === 1) {
+                    $("#" + id + "-rate").html(data.message);
+                } else {
+                    console.log("error:", data.message)
+                }
+            }
+        });
+    }
+
+    $(function () {
+        $(".desc-td").each(function () {
+            $(this).click(function () {
+                let $dialog = $("#dialog");
+                $("#dialog-title").html("说明");
+                $("#dialog-content").html($(this).html());
+                $dialog.modal();
+            });
+        });
+        $(".download-btn").click(function () {
+            let id = $(this).attr("id");
+            location.href = "/download/application/" + id;
+            setTimeout(function () {
+                $.ajax({
+                    type: "get",
+                    url: "/download/application-download-count/" + id,
+                    dataType: "json",
+                    success: function (data) {
+                        if (data.code === 1) {
+                            $("#" + id + "-download-count").html(data.message);
+                            $("#" + id + "-td-title").attr("title", "下载次数:" + data.message);
+                        } else {
+                            console.log("error:", data.message)
+                        }
+                    }
+                });
+            }, 2000);
+        });
+    {{if .IsAdmin}}
+        let $modal = $("#modal");
+        let $modalBody = $("#modal-body");
+        let modalBodyHtml = $modalBody.html();
+        $("#modal-close").click(function () {
+            $modal.modal("hide");
+            $modalBody.html(modalBodyHtml);
+        });
+        $(".download-count").each(function () {
+            $(this).click(function () {
+                let id = $(this).attr("id").split("-")[0];
+                $.ajax({
+                    type: "get",
+                    url: "/admin/application-download-log/" + id,
+                    dataType: "json",
+                    success: function (data) {
+                        if (data.code === 1) {
+                            if (data.data === null || data.data.length === 0) {
+                                $modalBody.html("暂无下载记录");
+                                $modal.modal();
+                            } else {
+                                let bodyHtml = `
+                               <table class="table table-condensed table-hover text-center">
+                                    <thead>
+                                    <tr>
+                                        <td><span class="text-warning">下载时间</span></td>
+                                        <td><span class="text-warning">用户姓名</span></td>
+                                    </tr>
+                                    </thead>
+                                    <tbody>
+                                `;
+                                for (let i = 0; i < data.data.length; i++) {
+                                    bodyHtml += `<tr style="cursor: pointer;">
+                                    <td width="50%">${data.data[i].DownloadTime}</td>
+                                    <td width="50%">${data.data[i].DownloadUserName}</td>
+                                    </tr>
+                                    `;
+                                }
+                                // bodyHtml += "</tbody></table>";
+                                $modalBody.html(bodyHtml);
+                                $modal.modal();
+                            }
+                        } else {
+                            console.log("error:", data.message)
+                        }
+                    }
+                });
+            });
+        });
+    {{end}}
+    });
+</script>
+{{template "middle"}}
+<div class="navbar navbar-inverse navbar-static-top">
+    <div class="container">
+    {{template "navbar" .}}
+    </div>
+</div>
+<div class="container">
+    <div class="row">
+        <div class="col-md-3">
+        {{$pid :=.Pid}}
+        {{$isAdmin :=.IsAdmin}}
+            <div class="list-group">
+            {{range .Projects}}
+                <a href="/download/project/{{.Id}}" class="list-group-item {{if eq $pid .Id}}active{{end}}">
+                    <span class="badge">{{len .Products}}</span>
+                {{.Name}}
+                </a>
+            {{end}}
+            </div>
+        </div>
+        <div class="col-md-9">
+        {{range .Products}}
+            <div class="thumbnail">
+                <div class="caption">
+                    <span class="text-primary" style="font-size: 18pt"><strong>{{.Name}}</strong></span>
+                {{if .Applications}}
+                    <div class="text-center">
+                        <table class="table table-condensed table-hover text-center">
+                            <thead>
+                            <tr class="text-warning">
+                                <td>版本号</td>
+                                <td>说明</td>
+                                <td>发布时间</td>
+                                <td>作者</td>
+                                <td>下载次数</td>
+                                <td>下载地址</td>
+                                <td>文件大小</td>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            {{range $index, $application := .Applications}}
+                            <tr style="cursor: pointer;">
+                                <td width="10%" title="VersionName:{{.VersionName}}">
+                                    <span class="label label-warning" style="font-size: 6pt">{{.VersionName}}</span>
+                                </td>
+                                <td width="10%" title="{{.Desc}}"
+                                    style="max-width: 50pt; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;"
+                                    id="{{.Id}}-desc" class="desc-td">{{.Desc}}</td>
+                                <td width="20%" title="发布时间:{{.CreateTime}}">{{.CreateTime}}</td>
+                                <td width="10%" title="作者:{{.Author}}">{{.Author}}</td>
+                                <td width="10%" title="下载次数:{{.DownloadCount}}" id="{{.Id}}-td-title">
+                                <span id="{{.Id}}-download-count" class="label label-success download-count"
+                                      style="font-size: 6pt">
+                                {{.DownloadCount}}
+                                </span>
+                                </td>
+                                <td width="25%" title="{{.FileName}}&nbsp;({{.FileSize}})"
+                                    style="max-width: 30pt; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">
+                                    <a id="{{.Id}}" class="btn download-btn btn-link" role="button">
+                                        <span>{{.FileName}}</span>
+                                    </a>
+
+                                </td>
+                                <td width="10%" title="{{.FileName}}&nbsp;({{.FileSize}})">
+                                    <span>{{.FileSize}}</span>
+                                </td>
+                            </tr>
+                            {{end}}
+
+                            </tbody>
+                        </table>
+                    </div>
+                {{else}}
+                    <div class="caption">
+                        <h1>还没有作者发布内容噢</h1>
+                    </div>
+                {{end}}
+                </div>
+            </div>
+        {{else}}
+            <div class="thumbnail">
+                <div class="caption">
+                    <h1>这里似乎还没有内容噢</h1>
+                </div>
+            </div>
+        {{end}}
+        </div>
+    </div>
+</div>
+
+
+<!-- Modal -->
+{{if .IsAdmin}}
+<div id="modal" class="modal fade" data-backdrop="static" data-keyboard="false" aria-hidden="true" tabindex="-1"
+     role="dialog"
+     aria-labelledby="myModalLabel" style="margin-top: 60pt;">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header text-center">
+                <h4 class="modal-title text-primary" id="myModalLabel"><strong>下载记录</strong></h4>
+            </div>
+            <div class="modal-body text-center" id="modal-body">
+
+            </div>
+            <div class="modal-footer" id="modal-foot">
+                <button type="button" class="btn btn-danger text-center" id="modal-close">确定</button>
+            </div>
+        </div>
+    </div>
+</div>
+{{end}}
+{{template "message-dialog"}}
+{{template "footer"}}

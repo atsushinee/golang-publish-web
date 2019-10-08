@@ -1,0 +1,17 @@
+{{template "header"}}
+<title>提示</title>
+
+{{template "middle"}}
+<div class="navbar navbar-inverse navbar-static-top">
+    <div class="container">
+    {{template "navbar" .}}
+    </div>
+</div>
+<div class="container">
+    <div class="jumbotron">
+        <h2 class="text-danger">抱歉,您没有操作此资源的权限</h2>
+        <p style="margin-top: 30pt"><a class="btn btn-primary" href="javascript:history.go(-1)" role="button">返回上一页</a>
+        </p>
+    </div>
+</div>
+{{template "footer"}}

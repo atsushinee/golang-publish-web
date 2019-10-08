@@ -1,0 +1,346 @@
+{{template "header"}}
+<title>应用发布</title>
+<link rel="stylesheet" href="/static/css/fileinput.css"/>
+<link rel="stylesheet" href="/static/css/bootstrap-select.min.css"/>
+<script src="/static/js/plugins/sortable.min.js" type="text/javascript"></script>
+
+<script src="/static/js/plugins/purify.min.js" type="text/javascript"></script>
+<script src="/static/js/fileinput.js" type="text/javascript"></script>
+<script src="/static/themes/explorer-fa/theme.js" type="text/javascript"></script>
+<script src="/static/themes/fa/theme.js" type="text/javascript"></script>
+<script src="/static/js/locales/zh.js" type="text/javascript"></script>
+<script src="/static/js/bootstrap-select.min.js"></script>
+
+<script>
+    const UploadDefault = -1;
+    const UploadErr = 0;
+    const UploadSuccess = 1;
+
+    function projectPickerChanged(id) {
+        let $productPicker = $("#product-picker");
+        $productPicker.html("");
+        $.ajax({
+            type: "get",
+            url: "/publish/project/" + id,
+            dataType: "json",
+            success: function (data) {
+                if (data.code === 1) {
+                    $.each(data.data, function (i) {
+                        $productPicker.append("<option value=" + data.data[i].Id + ">" + data.data[i].Name + "</option>");
+                    });
+                    $productPicker.selectpicker('refresh');
+                } else {
+                    console.log("error:", data.message)
+                }
+            }
+        });
+    }
+
+    $(function () {
+        projectPickerChanged($("#project-picker").val());
+
+        $("#file").fileinput({
+            language: "zh",
+            showPreview: true,
+            showClose: false,
+            showUpload: false,
+            showRemove: true,
+            dropZoneEnabled: true,
+            minFileCount: 1,
+            maxFileCount: 1,
+            maxFileSize: 1024 * 512,
+            validateInitialCount: true,
+            msgFilesTooMany: "选择上传的文件数量({n}) 超过允许的最大数值{m}！"
+        });
+
+        $("#submit").click(function () {
+            let $projectPicker = $("#project-picker");
+
+            let projectId = $projectPicker.val();
+            let projectName = $projectPicker.find("option:selected").text();
+            if (projectId === null) {
+                alert("请先选择项目");
+                return
+            }
+            let $productPiker = $("#product-picker");
+            let productId = $productPiker.val();
+            if (productId === null) {
+                alert("请先选择应用分类");
+                return
+            }
+            let productName = $productPiker.find("option:selected").text();
+
+            let versionName = $("#version-name").val();
+            if (versionName === "") {
+                alert("请输入VersionName");
+                return
+            }
+            let versionCode = $("#version-code").val();
+            if (versionCode === "") {
+                alert("请输入VersionCode");
+                return
+            }
+            let desc = $("#desc").val();
+            if (desc === "") {
+                alert("请输入应用说明");
+                return
+            }
+            // desc = desc.replace(/\n/g, "<br>").replace(/\r\n/g, "<br>").replace(/\s/g, "&nbsp;");
+            let file = $("#file")[0].files[0];
+            if (file === undefined) {
+                alert("请先选择文件");
+                return
+            }
+            let uploadType = UploadDefault;
+            reset();
+            $("#upload-modal").modal();
+
+
+            let fd = new FormData();
+            let req = new XMLHttpRequest();
+
+            fd.append("file", file);
+            fd.append("filename", file.name);
+            fd.append("projectId", projectId);
+            fd.append("productId", productId);
+            fd.append("productName", productName);
+            fd.append("projectName", projectName);
+            fd.append("versionCode", versionCode);
+            fd.append("versionName", versionName);
+            fd.append("desc", desc);
+            req.upload.addEventListener("progress", function (evt) {
+                if (evt.lengthComputable) {
+                    let progress = Math.round(evt.loaded * 100 / evt.total).toFixed() + "%";
+                    let fileSize = transFileSize(evt.total);
+                    let fileLoaded = (Math.round(evt.loaded * 100 / (1024 * 1024)) / 100).toString() + 'MB';
+                    let $uploadProgress = $("#upload-progress");
+                    let $uploadProgressText = $("#upload-progress-text");
+                    let $uploadSizeText = $("#upload-size-text");
+                    $uploadProgress.css("width", progress);
+                    $uploadProgressText.html(progress);
+                    $uploadSizeText.html(fileLoaded + "/" + fileSize);
+                    if (progress === "100%") {
+                        $("#progress").hide();
+                        $("#modal-message").show();
+                    }
+                }
+                else {
+                    alert("err")
+                }
+            }, false);
+            req.addEventListener("load", function (evt) {
+                let $info = $("#info-text");
+                try {
+                    let data = JSON.parse(evt.target.responseText);
+                    if (data.code === 0) {
+                        uploadType = UploadErr;
+                        $("#modal-waiting").hide();
+                        $info.html("应用发布失败 " + data.message);
+                        $info.attr("class", "text-danger");
+                        $("#modal-info").show();
+                    } else {
+                        uploadType = UploadSuccess;
+                        $("#modal-waiting").hide();
+                        $info.html("应用发布成功");
+                        $info.attr("class", "text-success");
+                        $("#modal-info").show();
+                    }
+                } catch (e) {
+                    uploadType = UploadErr;
+                    $("#modal-waiting").hide();
+                    $info.html("应用上传异常");
+                    $info.attr("class", "text-danger");
+                    $("#modal-info").show();
+                } finally {
+                    $("#modal-foot").show();
+                    $("#modal-close").html("确定");
+                }
+            }, false);
+            req.addEventListener("error", function (evt) {
+                let $info = $("#info-text");
+                try {
+                    let data = JSON.parse(evt.target.responseText);
+                    if (data.code === 0) {
+                        uploadType = UploadErr;
+                        $("#modal-waiting").hide();
+                        $info.html("应用发布错误 " + data.message);
+                        $info.attr("class", "text-danger");
+                        $("#modal-info").show();
+                    }
+                } catch (e) {
+                    uploadType = UploadErr;
+                    $("#modal-waiting").hide();
+                    $info.html("应用发布异常,请刷新页面尝试重试");
+                    $info.attr("class", "text-danger");
+                    $("#modal-info").show();
+                } finally {
+                    $("#modal-foot").show();
+                    $("#modal-close").html("确定");
+                }
+            }, false);
+            req.addEventListener("abort", function (evt) {
+                let $info = $("#info-text");
+                try {
+                    uploadType = UploadErr;
+                    let data = JSON.parse(evt.target.responseText);
+                    if (data.code === 0) {
+                        uploadType = UploadErr;
+                        $("#modal-waiting").hide();
+                        $info.html("应用上传中断 " + data.message);
+                        $info.attr("class", "text-danger");
+                        $("#modal-info").show();
+                    }
+                } catch (e) {
+                    uploadType = UploadErr;
+                    $("#modal-waiting").hide();
+                    $info.html("应用上传中断 " + evt);
+                    $info.attr("class", "text-danger");
+                    $("#modal-info").show();
+                } finally {
+                    $("#modal-close").html("确定");
+                }
+            }, false);
+            $("#modal-close").click(function () {
+                switch (uploadType) {
+                    case UploadDefault:
+                        req.abort();
+                        break;
+                    case UploadErr:
+                        $("#upload-modal").modal("hide");
+                        reset();
+                        break;
+                    case UploadSuccess:
+                        location.reload();
+                        break;
+                }
+            });
+            req.open("POST", "/publish/application");
+            req.send(fd);
+        });
+
+        function transFileSize(size) {
+            return (Math.round(size * 100 / (1024 * 1024)) / 100).toString() + "MB";
+        }
+
+        function reset() {
+            $("#upload-progress").css("width", "0").attr("aria-valuenow", "0");
+            $("#upload-progress-text").html("0%");
+            $("#upload-size-text").html("0M/0M");
+            $("#progress").show();
+            $("#modal-message").hide();
+            $("#modal-waiting").show();
+            $("#modal-info").hide();
+            $("#modal-foot").hide();
+        }
+
+    });
+
+</script>
+{{template "middle"}}
+<div class="navbar navbar-inverse navbar-static-top">
+    <div class="container">
+    {{template "navbar" .}}
+    </div>
+</div>
+<div class="container">
+    <div class="page-header">
+        <h1 class="text-info">快速发布新应用</h1>
+    </div>
+{{if .Message}}
+    <div class="alert alert-warning alert-dismissible" role="alert">
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span
+                aria-hidden="true">&times;</span></button>
+        <strong>{{.Message}}</strong>
+    </div>
+{{end}}
+    <div class="form-horizontal">
+        <div class="form-group">
+            <label for="project-picker" class="col-sm-2 control-label">请选择项目：</label>
+            <div class="col-sm-10">
+                <select class="selectpicker" id="project-picker" onchange="projectPickerChanged(this.value)">
+                {{range .Projects}}
+                    <option value="{{.Id}}">{{.Name}}</option>
+                {{end}}
+                </select>
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="product-picker" class="col-sm-2 control-label">请选择应用分类：</label>
+            <div class="col-sm-10">
+                <select class="selectpicker" id="product-picker">
+
+                </select>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="version" class="col-sm-2 control-label">版本名称：</label>
+            <div class="col-sm-10">
+                <input class="form-control" id="version-name" name="versionName" placeholder="Version:v1.0.0"
+                       maxlength="24">
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="version" class="col-sm-2 control-label">版本号：</label>
+            <div class="col-sm-10">
+                <input class="form-control" id="version-code" name="versionCode" type="number"
+                       placeholder="请输入数字,数字越大代表版本越高" min="1" max="300" size="3">
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="desc" class="col-sm-2 control-label">应用说明：</label>
+            <div class="col-sm-10">
+                <input class="form-control" id="desc" name="desc" placeholder="应用说明(100字内)"/>
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="file" class="col-sm-2 control-label">上传应用：</label>
+            <div class="col-sm-10">
+                <input id="file" name="file" type="file">
+            </div>
+        </div>
+        <div class="form-group">
+            <div class="col-sm-offset-2 col-sm-10">
+                <button id="submit" class="btn btn-success">快速发布</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal -->
+<div class="modal" data-backdrop="static" aria-hidden="true" data-keyboard="false" id="upload-modal" tabindex="-1"
+     role="dialog"
+     aria-labelledby="myModalLabel" style="margin-top: 200pt;">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header text-center">
+                <h4 class="modal-title text-primary" id="myModalLabel"><strong>正在上传您的新应用,请等待</strong></h4>
+            </div>
+            <div class="modal-body">
+                <div id="modal-message" class="text-center">
+                    <div id="modal-waiting">
+                        <img src="/static/img/upload-loading.gif" alt="请等待">
+                        <br>
+                        <p class="text-info" id="waiting-text" style="font-size: 15pt">文件上传成功,正在处理中,请稍后</p>
+                    </div>
+                    <div id="modal-info">
+                        <p id="info-text" style="font-size: 15pt"></p>
+                    </div>
+                </div>
+                <div id="progress">
+                    <div class="progress">
+                        <div class="progress-bar progress-bar-success" id="upload-progress" role="progressbar"
+                             aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" style="min-width: 2em;">
+                            <span id="upload-progress-text">0%</span>
+                        </div>
+                    </div>
+                    <span id="upload-size-text" class="text-info"></span>
+                </div>
+            </div>
+            <div class="modal-footer" id="modal-foot">
+                <button type="button" class="btn btn-danger" id="modal-close">确定</button>
+            </div>
+        </div>
+    </div>
+</div>
+{{template "footer"}}

@@ -1,0 +1,174 @@
+{{template "header"}}
+<title>产品管理</title>
+<script>
+    $(function () {
+        $("#product-add-submit").click(function () {
+            let projectId = $("#project-id").val();
+            let name = $("#product-add-name").val();
+            if (name === "") {
+                alert("产品名称不可为空");
+                return
+            }
+
+            $.ajax({
+                type: "post",
+                url: "/admin/product/add",
+                dataType: "json",
+                data: `{"project_id":${projectId},"name":"${name}"}`,
+                success: function (data) {
+                    if (data.code === 1) {
+                        alert("产品新增成功");
+                        location.reload();
+                    } else {
+                        alert(`产品新增失败:${data.message}`);
+                    }
+                }
+            });
+        });
+        $(".btn-product-add").each(function () {
+            $(this).click(function () {
+                let id = $(this).attr("id").split("-")[0];
+                $("#project-id").val(id);
+                $("#product-add-project-name").html($(`#${id}-project-name`).html());
+                $("#product-add-modal").modal();
+            });
+        });
+
+        $("#show-create-project-dialog").click(function () {
+            $("#project-add-modal").modal();
+        });
+
+        $("#project-add-submit").click(function () {
+            let name = $("#project-add-name").val();
+            if (name === "") {
+                alert("项目名称不可为空");
+                return
+            }
+
+            $.ajax({
+                type: "post",
+                url: "/admin/project/add",
+                dataType: "json",
+                data: `{"name":"${name}"}`,
+                success: function (data) {
+                    if (data.code === 1) {
+                        alert("项目新增成功");
+                        location.reload();
+                    } else {
+                        alert(`项目新增失败:${data.message}`);
+                    }
+                }
+            });
+        });
+    });
+</script>
+{{template "middle"}}
+<div class="navbar navbar-inverse navbar-static-top">
+    <div class="container">
+    {{template "navbar" .}}
+    </div>
+</div>
+<div class="container">
+    <div class="row">
+        <div class="col-md-3">
+            <div class="list-group">
+            {{$path := .FullPath}}
+            {{range .AdminMenus}}
+                <a href="{{.Path}}" class="list-group-item {{if eq $path .Path}}active{{end}}">
+                {{.Name}}
+                </a>
+            {{end}}
+            </div>
+        </div>
+        <div class="col-md-9">
+            <div class="thumbnail">
+                <div class="caption">
+                    <div class="text-right" style="margin-bottom:10pt;">
+                        <button class="btn btn-success" id="show-create-project-dialog">+ 添加项目</button>
+                    </div>
+                </div>
+            {{range .Projects}}
+                <div class="panel panel-default">
+                    <div class="panel-heading">
+                        <span class="text-primary" style="font-size: 18pt"><strong
+                                id="{{.Id}}-project-name">{{.Name}}</strong></span>
+                        <button class="btn btn-primary pull-right btn-product-add" style="font-weight: bold;"
+                                id="{{.Id}}-product-add"
+                                title="添加新产品">新增
+                        </button>
+                    </div>
+
+                    <ul class="list-group">
+                    {{range .Products}}
+                        <li class="list-group-item text-info">{{.Name}}</li>
+                    {{else}}
+                        <li class="list-group-item text-warning">暂无任何内容</li>
+                    {{end}}
+                    </ul>
+                </div>
+            {{end}}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- product-add -->
+<div id="product-add-modal" class="modal fade" data-backdrop="static" data-keyboard="false" aria-hidden="true"
+     tabindex="-1"
+     role="dialog"
+     aria-labelledby="myModalLabel" style="margin-top: 60pt;">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header text-center">
+                <h4 class="modal-title text-primary"><span><strong
+                        id="product-add-project-name"></strong></span><strong>&nbsp;&nbsp;&gt;&nbsp;&nbsp;添加新产品</strong>
+                </h4>
+            </div>
+            <div class="modal-body text-center">
+                <div class="form-group form-inline">
+                    <label for="product-add-name" style="margin-right: 20pt;">产品名称：</label>
+                    <input class="form-control" id="product-add-name" placeholder="请输入产品名称"
+                           style="width: 200pt">
+                    <input type="hidden" id="project-id">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <div class="text-center">
+                    <button class="btn btn-danger" data-dismiss="modal">返回</button>
+                    <button type="button" class="btn btn-success" id="product-add-submit" style="margin-left: 30pt;">确定
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- project-add -->
+<div id="project-add-modal" class="modal fade" data-backdrop="static" data-keyboard="false" aria-hidden="true"
+     tabindex="-1"
+     role="dialog"
+     aria-labelledby="myModalLabel" style="margin-top: 60pt;">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header text-center">
+                <h4 class="modal-title text-primary"><strong>添加新项目</strong>
+                </h4>
+            </div>
+            <div class="modal-body text-center">
+                <div class="form-group form-inline">
+                    <label for="project-add-name" style="margin-right: 20pt;">项目名称：</label>
+                    <input class="form-control" id="project-add-name" placeholder="请输入项目名称"
+                           style="width: 200pt">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <div class="text-center">
+                    <button class="btn btn-danger" data-dismiss="modal">返回</button>
+                    <button type="button" class="btn btn-success" id="project-add-submit" style="margin-left: 30pt;">确定
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{{template "footer"}}

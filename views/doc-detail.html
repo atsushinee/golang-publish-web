@@ -1,0 +1,310 @@
+{{template "header"}}
+<title>文档</title>
+{{if .IsPublish}}
+<link rel="stylesheet" href="/static/css/fileinput.css"/>
+<link rel="stylesheet" href="/static/css/bootstrap-select.min.css"/>
+<script src="/static/js/plugins/sortable.min.js" type="text/javascript"></script>
+
+<script src="/static/js/plugins/purify.min.js" type="text/javascript"></script>
+<script src="/static/js/fileinput.js" type="text/javascript"></script>
+<script src="/static/themes/explorer-fa/theme.js" type="text/javascript"></script>
+<script src="/static/themes/fa/theme.js" type="text/javascript"></script>
+<script src="/static/js/locales/zh.js" type="text/javascript"></script>
+{{end}}
+<script>
+    $(function () {
+        $(".view-btn").click(function () {
+            let id = $(this).attr("data-id").split("-")[0];
+            let name = $(this).attr("data-name").split("-")[0];
+            window.open(`/doc/view/${id}/${name}`);
+            setTimeout(function () {
+                $.ajax({
+                    type: "get",
+                    url: `/doc/doc-view-count/${id}`,
+                    dataType: "json",
+                    success: function (data) {
+                        if (data.code === 1) {
+                            $("#" + id + "-view-count").html(data.message);
+                            $("#" + id + "-td-title").attr("title", "观看次数:" + data.message);
+                        } else {
+                            console.log("error:", data.message)
+                        }
+                    }
+                });
+            }, 2000);
+        });
+    {{if .IsAdmin}}
+        let $modal = $("#modal");
+        let $modalBody = $("#modal-body");
+        let modalBodyHtml = $modalBody.html();
+        $("#modal-close").click(function () {
+            $modal.modal("hide");
+            $modalBody.html(modalBodyHtml);
+        });
+        $(".view-count").each(function () {
+            $(this).click(function () {
+                let id = $(this).attr("id").split("-")[0];
+                $.ajax({
+                    type: "get",
+                    url: "/admin/doc-view-log/" + id,
+                    dataType: "json",
+                    success: function (data) {
+                        if (data.code === 1) {
+                            if (data.data === null || data.data.length === 0) {
+                                $modalBody.html("暂无观看记录");
+                                $modal.modal();
+                            } else {
+                                let bodyHtml = `
+                               <table class="table table-condensed table-hover text-center">
+                                    <thead>
+                                    <tr>
+                                        <td><span class="text-warning">观看时间</span></td>
+                                        <td><span class="text-warning">用户姓名</span></td>
+                                    </tr>
+                                    </thead>
+                                    <tbody>
+                                `;
+                                for (let i = 0; i < data.data.length; i++) {
+                                    bodyHtml += `<tr style="cursor: pointer;">
+                                    <td width="50%">${data.data[i].ViewTime}</td>
+                                    <td width="50%">${data.data[i].ViewUserName}</td>
+                                    </tr>
+                                    `;
+                                }
+                                // bodyHtml += "</tbody></table>";
+                                $modalBody.html(bodyHtml);
+                                $modal.modal();
+                            }
+                        } else {
+                            console.log("error:", data.message)
+                        }
+                    }
+                });
+            });
+        });
+    {{end}}
+
+    {{if .IsPublish}}
+        $("#file").fileinput({
+            language: "zh",
+            showPreview: true,
+            showClose: false,
+            showUpload: false,
+            showRemove: true,
+            dropZoneEnabled: true,
+            minFileCount: 1,
+            maxFileCount: 1,
+            maxFileSize: 1024 * 512,
+            validateInitialCount: true,
+            allowedFileExtensions: ["pdf", "mp4"],
+            msgFilesTooMany: "选择上传的文件数量({n}) 超过允许的最大数值{m}！"
+        });
+
+        $("#show-add-doc-dialog").click(function () {
+            reset();
+            $("#doc-add").modal();
+        });
+        $("#doc-add-submit").click(function () {
+            let projectId = $("#project-id").val();
+            let projectName = $("#project-name").val();
+            let file = $("#file")[0].files[0];
+            if (file === undefined) {
+                alert("请先选择文件");
+                return
+            }
+            let fd = new FormData();
+            let req = new XMLHttpRequest();
+
+            fd.append("file", file);
+            fd.append("fileName", file.name);
+            fd.append("projectId", projectId);
+            fd.append("projectName", projectName);
+
+
+            req.upload.addEventListener("progress", function (evt) {
+                if (evt.lengthComputable) {
+                    let progress = Math.round(evt.loaded * 100 / evt.total).toFixed() + "%";
+                    let fileSize = transFileSize(evt.total);
+                    let fileLoaded = (Math.round(evt.loaded * 100 / (1024 * 1024)) / 100).toString() + 'MB';
+                    let $uploadProgress = $("#upload-progress");
+                    let $uploadProgressText = $("#upload-progress-text");
+                    let $uploadSizeText = $("#upload-size-text");
+                    $uploadProgress.css("width", progress);
+                    $uploadProgressText.html(progress);
+                    $uploadSizeText.html(fileLoaded + "/" + fileSize);
+                    if (progress === "100%") {
+                        $("#doc-add").modal("hide");
+                    }
+                }
+                else {
+                    alert("err")
+                }
+            }, false);
+            req.addEventListener("load", function (evt) {
+                try {
+                    let data = JSON.parse(evt.target.responseText);
+                    if (data.code === 0) {
+                        alert("发布失败:" + data.message);
+                    } else {
+                        alert("发布成功");
+                    }
+
+                } catch (e) {
+                    alert("发布异常");
+                }
+                location.reload();
+
+            }, false);
+            req.addEventListener("error", function (evt) {
+                alert("上传错误:" + evt);
+                location.reload();
+            }, false);
+
+            req.open("POST", "/publish/doc");
+            req.send(fd);
+            $("#progress").show();
+            $("#doc-add-btn").hide();
+
+        });
+
+        function transFileSize(size) {
+            return (Math.round(size * 100 / (1024 * 1024)) / 100).toString() + "MB";
+        }
+
+        function reset() {
+            $("#progress").hide();
+            $("#doc-add-btn").show();
+        }
+    {{end}}
+    });
+
+</script>
+{{template "middle"}}
+<div class="navbar navbar-inverse navbar-static-top">
+    <div class="container">
+    {{template "navbar" .}}
+    </div>
+</div>
+<div class="container">
+    <div class="row">
+        <div class="col-md-3">
+            <div class="list-group">
+            {{$pid := .Pid}}
+            {{range .Projects}}
+                <a href="/doc/project/{{.Id}}" class="list-group-item {{if eq $pid .Id}}active{{end}}">
+                    <span class="badge">{{len .Docs}}</span>
+                {{.Name}}
+                </a>
+            {{end}}
+            </div>
+        </div>
+        <div class="col-md-9">
+            <div class="thumbnail">
+            {{if .IsPublish}}
+                <div class="text-right caption">
+                    <button class="btn btn-success" id="show-add-doc-dialog">+ 新增文档</button>
+                </div>
+            {{end}}
+            {{if .Docs}}
+                <div class="caption">
+                    <table class="table table-hover text-center" style="cursor: pointer;">
+                        <thead>
+                        <tr class="text-warning">
+                            <td>文档名称</td>
+                            <td>发布时间</td>
+                            <td>作者</td>
+                            <td>观看次数</td>
+                            <td>文档类型</td>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {{range .Docs}}
+                        <tr>
+                            <td width="35%" title="点击观看">
+                                <button class="btn btn-link view-btn" data-id="{{.Id}}"
+                                        data-name="{{.Name}}">{{.Name}}</button>
+                            </td>
+                            <td width="20%" title="发布时间:{{.CreateTime}}">{{.CreateTime}}</td>
+                            <td width="15%" title="作者:{{.Author}}">{{.Author}}</td>
+                            <td width="15%" title="观看次数:{{.ViewCount}}">
+                                <span id="{{.Id}}-view-count" class="label label-success view-count"
+                                      style="font-size: 6pt">{{.ViewCount}}</span>
+                            </td>
+                            <td width="15%" title="{{.Type}}"><span class="label label-warning"
+                                                                    style="font-size: 6pt">{{.Type}}</span></td>
+                        </tr>
+                        {{end}}
+                        </tbody>
+                    </table>
+                </div>
+            {{else}}
+                <div class="caption">
+                    <h1>暂无该项目的相关文档噢</h1>
+                </div>
+            {{end}}
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Modal -->
+{{if .IsAdmin}}
+<div id="modal" class="modal fade" data-backdrop="static" data-keyboard="false" aria-hidden="true" tabindex="-1"
+     role="dialog"
+     aria-labelledby="myModalLabel" style="margin-top: 60pt;">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header text-center">
+                <h4 class="modal-title text-primary" id="myModalLabel"><strong>观看记录</strong></h4>
+            </div>
+            <div class="modal-body text-center" id="modal-body">
+
+            </div>
+            <div class="modal-footer" id="modal-foot">
+                <button type="button" class="btn btn-danger text-center" id="modal-close">确定</button>
+            </div>
+        </div>
+    </div>
+</div>
+{{end}}
+
+<!-- Modal -->
+{{if .IsPublish}}
+<!-- doc-add -->
+<div id="doc-add" class="modal fade" data-backdrop="static" data-keyboard="false" aria-hidden="true" tabindex="-1"
+     role="dialog"
+     aria-labelledby="myModalLabel" style="margin-top: 60pt;">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header text-center">
+                <h4 class="modal-title text-primary" id="doc-add-title"><strong>{{.Project.Name}} > 上传文档</strong></h4>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="project-id" value="{{.Project.Id}}">
+                <input type="hidden" id="project-name" value="{{.Project.Name}}">
+                <div class="form-group form-inline">
+                    <label for="file" style="cursor: pointer;">文档上传: <span
+                            style="color:red">(暂只支持 ["mp4","pdf"] 格式文件)</span></label>
+                    <input id="file" name="file" type="file" class="form-control">
+                </div>
+            </div>
+            <div id="progress">
+                <div class="progress">
+                    <div class="progress-bar progress-bar-success" id="upload-progress" role="progressbar"
+                         aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" style="min-width: 2em;">
+                        <span id="upload-progress-text">0%</span>
+                    </div>
+                </div>
+                <span id="upload-size-text" class="text-info"></span>
+            </div>
+            <div class="modal-footer">
+                <div class="text-center" id="doc-add-btn">
+                    <button class="btn  btn-danger" data-dismiss="modal">取消</button>
+                    <button class="btn btn-success" id="doc-add-submit" style="margin-left: 90pt;">上传
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{{end}}
+{{template "footer"}}

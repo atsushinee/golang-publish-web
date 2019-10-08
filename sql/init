@@ -1,0 +1,79 @@
+INSERT INTO "main"."role_menu"("rid", "mid") VALUES ('1', '2');
+INSERT INTO "main"."role_menu"("rid", "mid") VALUES ('1', '3');
+INSERT INTO "main"."role_menu"("rid", "mid") VALUES ('2', '2');
+INSERT INTO "main"."role_menu"("rid", "mid") VALUES ('2', '1');
+INSERT INTO "main"."role_menu"("rid", "mid") VALUES ('3', '2');
+INSERT INTO "main"."role_menu"("rid", "mid") VALUES ('3', '3');
+INSERT INTO "main"."role_menu"("rid", "mid") VALUES ('2', '3');
+INSERT INTO "main"."role_menu"("rid", "mid") VALUES ('4', '2');
+INSERT INTO "main"."role_menu"("rid", "mid") VALUES ('4', '3');
+
+INSERT INTO "main"."menu"("id", "name", "path", "xh") VALUES ('1', '应用发布', '/publish', '3');
+INSERT INTO "main"."menu"("id", "name", "path", "xh") VALUES ('2', '文档', '/doc', '99');
+INSERT INTO "main"."menu"("id", "name", "path", "xh") VALUES ('3', '下载', '/download', '95');
+
+INSERT INTO "main"."project"("id", "name", "item_count") VALUES ('1', '违章处罚', '0');
+INSERT INTO "main"."project"("id", "name", "item_count") VALUES ('2', '自助签名', '0');
+INSERT INTO "main"."project"("id", "name", "item_count") VALUES ('3', '驾驶人科目考试', '0');
+INSERT INTO "main"."project"("id", "name", "item_count") VALUES ('4', '无纸化系统', '0');
+
+INSERT INTO "main"."role"("id", "name") VALUES ('1', '管理员');
+INSERT INTO "main"."role"("id", "name") VALUES ('2', '开发人员');
+INSERT INTO "main"."role"("id", "name") VALUES ('3', '部门内部人员');
+INSERT INTO "main"."role"("id", "name") VALUES ('4', '普通用户');
+
+INSERT INTO "main"."role_menu"("rid", "mid") VALUES ('1', '2');
+INSERT INTO "main"."role_menu"("rid", "mid") VALUES ('1', '3');
+INSERT INTO "main"."role_menu"("rid", "mid") VALUES ('2', '2');
+INSERT INTO "main"."role_menu"("rid", "mid") VALUES ('2', '1');
+INSERT INTO "main"."role_menu"("rid", "mid") VALUES ('3', '2');
+INSERT INTO "main"."role_menu"("rid", "mid") VALUES ('3', '3');
+INSERT INTO "main"."role_menu"("rid", "mid") VALUES ('2', '3');
+INSERT INTO "main"."role_menu"("rid", "mid") VALUES ('4', '2');
+INSERT INTO "main"."role_menu"("rid", "mid") VALUES ('4', '3');
+
+INSERT INTO "main"."role_permission"("id", "rid", "allow_access_path", "operation") VALUES ('1', '1', '/doc', 'view;modify');
+INSERT INTO "main"."role_permission"("id", "rid", "allow_access_path", "operation") VALUES ('2', '1', '/publish', 'view;modify');
+INSERT INTO "main"."role_permission"("id", "rid", "allow_access_path", "operation") VALUES ('3', '1', '/download', 'view;modify');
+INSERT INTO "main"."role_permission"("id", "rid", "allow_access_path", "operation") VALUES ('4', '1', '/downloads', 'view;modify');
+INSERT INTO "main"."role_permission"("id", "rid", "allow_access_path", "operation") VALUES ('5', '2', '/doc', 'view;modify');
+INSERT INTO "main"."role_permission"("id", "rid", "allow_access_path", "operation") VALUES ('6', '2', '/publish', 'view;modify');
+INSERT INTO "main"."role_permission"("id", "rid", "allow_access_path", "operation") VALUES ('7', '2', '/download', 'view;modify');
+INSERT INTO "main"."role_permission"("id", "rid", "allow_access_path", "operation") VALUES ('8', '2', '/downloads', 'view;modify');
+INSERT INTO "main"."role_permission"("id", "rid", "allow_access_path", "operation") VALUES ('9', '3', '/doc', 'view');
+INSERT INTO "main"."role_permission"("id", "rid", "allow_access_path", "operation") VALUES ('10', '3', '/download', 'view');
+INSERT INTO "main"."role_permission"("id", "rid", "allow_access_path", "operation") VALUES ('11', '3', '/downloads', 'view');
+INSERT INTO "main"."role_permission"("id", "rid", "allow_access_path", "operation") VALUES ('12', '4', '/doc', 'view');
+INSERT INTO "main"."role_permission"("id", "rid", "allow_access_path", "operation") VALUES ('13', '4', '/download', 'view');
+
+INSERT INTO "main"."user_role"("uid", "rid") VALUES ('1', '1');
+INSERT INTO "main"."user_role"("uid", "rid") VALUES ('1', '2');
+INSERT INTO "main"."user_role"("uid", "rid") VALUES ('2', '1');
+INSERT INTO "main"."user_role"("uid", "rid") VALUES ('2', '2');
+INSERT INTO "main"."user_role"("uid", "rid") VALUES ('3', '2');
+INSERT INTO "main"."user_role"("uid", "rid") VALUES ('4', '2');
+INSERT INTO "main"."user_role"("uid", "rid") VALUES ('4', '3');
+INSERT INTO "main"."user_role"("uid", "rid") VALUES ('5', '2');
+INSERT INTO "main"."user_role"("uid", "rid") VALUES ('5', '3');
+INSERT INTO "main"."user_role"("uid", "rid") VALUES ('6', '2');
+INSERT INTO "main"."user_role"("uid", "rid") VALUES ('6', '3');
+INSERT INTO "main"."user_role"("uid", "rid") VALUES ('7', '3');
+INSERT INTO "main"."user_role"("uid", "rid") VALUES ('8', '3');
+INSERT INTO "main"."user_role"("uid", "rid") VALUES ('9', '3');
+INSERT INTO "main"."user_role"("uid", "rid") VALUES ('10', '3');
+INSERT INTO "main"."user_role"("uid", "rid") VALUES ('11', '3');
+INSERT INTO "main"."user_role"("uid", "rid") VALUES ('12', '4');
+INSERT INTO "main"."user_role"("uid", "rid") VALUES ('3', '3');
+
+INSERT INTO "main"."user"("id", "username", "name", "password", "create_time", "last_login_time", "last_login_ip") VALUES ('1', 'admin', '管理员', 'lichun', '2018-11-29 13:29:17', '2018-11-29 14:57:24', '[');
+INSERT INTO "main"."user"("id", "username", "name", "password", "create_time", "last_login_time", "last_login_ip") VALUES ('2', 'lichun', '李淳', '12345678', '2018-11-29 13:29:27', '2018-11-29 13:36:37', '[');
+INSERT INTO "main"."user"("id", "username", "name", "password", "create_time", "last_login_time", "last_login_ip") VALUES ('3', 'niujiawei', '牛家伟', 'njw461688', '2018-11-29 13:29:27', '2018-11-29 15:29:42', '[');
+INSERT INTO "main"."user"("id", "username", "name", "password", "create_time", "last_login_time", "last_login_ip") VALUES ('4', 'caoxiangxing', '曹祥兴', '111111', '2018-11-29 13:29:27', '', '');
+INSERT INTO "main"."user"("id", "username", "name", "password", "create_time", "last_login_time", "last_login_ip") VALUES ('5', 'liuyong', '刘勇', '111111', '2018-11-29 13:29:27', '', '');
+INSERT INTO "main"."user"("id", "username", "name", "password", "create_time", "last_login_time", "last_login_ip") VALUES ('6', 'shiyang', '施扬', '111111', '2018-11-29 13:29:27', '', '');
+INSERT INTO "main"."user"("id", "username", "name", "password", "create_time", "last_login_time", "last_login_ip") VALUES ('7', 'wusuli', '吴素丽', '12345678', '2018-11-29 13:29:27', '2018-11-29 15:28:02', '[');
+INSERT INTO "main"."user"("id", "username", "name", "password", "create_time", "last_login_time", "last_login_ip") VALUES ('8', 'taolei', '陶磊', '111111', '2018-11-29 13:29:27', '', '');
+INSERT INTO "main"."user"("id", "username", "name", "password", "create_time", "last_login_time", "last_login_ip") VALUES ('9', 'xuanguangyuan', '宣光源', '111111', '2018-11-29 13:29:27', '', '');
+INSERT INTO "main"."user"("id", "username", "name", "password", "create_time", "last_login_time", "last_login_ip") VALUES ('10', 'sanghao', '桑昊', '111111', '2018-11-29 13:29:27', '', '');
+INSERT INTO "main"."user"("id", "username", "name", "password", "create_time", "last_login_time", "last_login_ip") VALUES ('11', 'zhaolei', '赵磊', '111111', '2018-11-29 13:29:27', '', '');
+INSERT INTO "main"."user"("id", "username", "name", "password", "create_time", "last_login_time", "last_login_ip") VALUES ('12', 'user', '普通用户', 'user', '2018-11-29 13:36:07', '2018-11-29 15:29:19', '[');

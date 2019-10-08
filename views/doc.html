@@ -1,0 +1,32 @@
+{{template "header"}}
+<title>文档</title>
+
+{{template "middle"}}
+<div class="navbar navbar-inverse navbar-static-top">
+    <div class="container">
+    {{template "navbar" .}}
+    </div>
+</div>
+<div class="container">
+    <div class="row">
+        <div class="col-md-3">
+            <div class="list-group">
+            {{range .Projects}}
+                <a href="/doc/project/{{.Id}}" class="list-group-item">
+                    <span class="badge">{{len .Docs}}</span>
+                {{.Name}}
+                </a>
+            {{end}}
+            </div>
+        </div>
+        <div class="col-md-9">
+            <div class="thumbnail">
+                <div class="caption">
+                    <h3 class="text-primary">项目相关文档</h3>
+                    <p class="text-info">请根据左侧菜单进行相应选择</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{{template "footer"}}
